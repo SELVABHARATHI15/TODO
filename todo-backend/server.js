@@ -8,9 +8,20 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Connect to MongoDB and only start the server once connected
 mongoose.connect('mongodb://localhost:27017/todoapp')
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.log(err));
+    .then(() => {
+        console.log('MongoDB connected');
+        // Start the server after DB connection is established
+        const port = process.env.PORT || 4000;
+        app.listen(port, () => {
+            console.log(`Server is running on http://localhost:${port}`);
+        });
+    })
+    .catch(err => {
+        console.error('Failed to connect to MongoDB', err);
+        process.exit(1); // Exit so process manager (if any) can try again
+    });
 
 const todoSchema = new mongoose.Schema({
     title: { type: String, required: true },
