@@ -12,7 +12,6 @@ app.use(express.json());
 mongoose.connect('mongodb://localhost:27017/todoapp')
     .then(() => {
         console.log('MongoDB connected');
-        // Start the server after DB connection is established
         const port = process.env.PORT || 4000;
         app.listen(port, () => {
             console.log(`Server is running on http://localhost:${port}`);
@@ -20,7 +19,7 @@ mongoose.connect('mongodb://localhost:27017/todoapp')
     })
     .catch(err => {
         console.error('Failed to connect to MongoDB', err);
-        process.exit(1); // Exit so process manager (if any) can try again
+        process.exit(1);
     });
 
 const todoSchema = new mongoose.Schema({
@@ -34,6 +33,9 @@ const todoModel = mongoose.model('Todo', todoSchema);
 app.post('/todos', async (req, res) => {
     try {
         const { title, description } = req.body;
+        if (!title || !description) {
+            return res.status(400).json({ error: 'title and description are required' });
+        }
         const newTodo = new todoModel({ title, description });
         await newTodo.save();
         res.status(201).json(newTodo);
@@ -60,10 +62,13 @@ app.put('/todos/:id', async (req, res) => {
         const { title, description } = req.body;
         const id = req.params.id;
 
+        if (!title || !description) {
+            return res.status(400).json({ error: 'title and description are required' });
+        }
         const updatedTodo = await todoModel.findByIdAndUpdate(
             id,
             { title, description },
-            { new: true }
+            { new: true, runValidators: true }
         );
 
         if (!updatedTodo) {
@@ -94,7 +99,4 @@ app.delete('/todos/:id', async (req, res) => {
     }
 });
 
-const port = 4000;
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-});
+// Server is started after MongoDB connection is successful.
